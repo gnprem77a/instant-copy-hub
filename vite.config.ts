@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     // Frontend dev server
-    port: 8081,
+    port: 8080,
     hmr: {
       overlay: false,
     },
