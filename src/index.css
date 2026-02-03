@@ -1,0 +1,218 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Core design system
+  All colors MUST be HSL and mapped through CSS variables.
+  We define a soft, premium PDF-tool theme with purple primary,
+  warm neutrals, and vibrant accent for gradients.
+*/
+
+@layer base {
+  :root {
+    /* Surfaces */
+    --background: 230 30% 6%; /* ink-black */
+    --foreground: 0 0% 100%; /* white */
+
+    --card: 230 28% 10%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 230 28% 10%;
+    --popover-foreground: 0 0% 100%;
+
+    /* Brand */
+    --primary: 262 88% 70%; /* editorial violet */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 230 22% 14%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 230 20% 14%;
+    --muted-foreground: 220 12% 72%;
+
+    --accent: 195 90% 60%; /* cool accent */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 230 22% 18%;
+    --input: 230 22% 18%;
+    --ring: 262 88% 70%;
+
+    --radius: 1.25rem;
+
+    /* Sidebar (kept for shadcn sidebar compatibility) */
+    --sidebar-background: 230 30% 6%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 262 88% 70%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 230 22% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 230 22% 18%;
+    --sidebar-ring: 262 88% 70%;
+
+    /* Extra tokens for this theme */
+    --hero-gradient-from: 262 88% 70%;
+    --hero-gradient-to: 195 90% 60%;
+    --chip-bg: 230 22% 14%;
+    --chip-border: 230 22% 18%;
+    --chip-foreground: 220 12% 80%;
+    --glow-strong: 262 88% 70%;
+  }
+
+  .dark {
+    --background: 230 40% 6%;
+    --foreground: 0 0% 100%;
+
+    --card: 230 40% 10%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 230 40% 8%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 260 84% 70%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 230 35% 14%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 230 30% 16%;
+    --muted-foreground: 220 12% 70%;
+
+    --accent: 18 90% 63%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 230 30% 20%;
+    --input: 230 30% 20%;
+    --ring: 260 84% 70%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 260 84% 70%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 260 84% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .bg-hero-surface {
+    background:
+      radial-gradient(60% 55% at 20% 15%, hsl(var(--primary) / 0.22), transparent 55%),
+      radial-gradient(55% 60% at 85% 20%, hsl(var(--accent) / 0.14), transparent 58%),
+      hsl(var(--background));
+  }
+
+  /* Neon / aurora background helpers (main page) */
+  .bg-aurora-surface {
+    background:
+      radial-gradient(60% 55% at 10% 15%, hsl(var(--primary) / 0.22), transparent 60%),
+      radial-gradient(55% 60% at 90% 10%, hsl(var(--accent) / 0.18), transparent 55%),
+      radial-gradient(50% 55% at 60% 85%, hsl(var(--primary) / 0.12), transparent 60%),
+      hsl(var(--background));
+  }
+
+  @keyframes aurora-drift {
+    0% {
+      transform: translate3d(-6%, -4%, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(6%, 5%, 0) scale(1.06);
+    }
+    100% {
+      transform: translate3d(-6%, -4%, 0) scale(1);
+    }
+  }
+
+  .aurora-layer {
+    position: absolute;
+    inset: -20%;
+    filter: blur(42px);
+    opacity: 0.85;
+    animation: aurora-drift 10s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .aurora-layer--1 {
+    background: radial-gradient(circle at 20% 20%, hsl(var(--primary) / 0.38), transparent 55%);
+    animation-duration: 12s;
+  }
+
+  .aurora-layer--2 {
+    background: radial-gradient(circle at 80% 25%, hsl(var(--accent) / 0.32), transparent 55%);
+    animation-duration: 14s;
+    animation-delay: -2s;
+    mix-blend-mode: multiply;
+  }
+
+  .aurora-layer--3 {
+    background: radial-gradient(circle at 55% 75%, hsl(var(--primary) / 0.22), transparent 60%);
+    animation-duration: 16s;
+    animation-delay: -6s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aurora-layer {
+      animation: none;
+    }
+  }
+
+  .text-hero-gradient {
+    background-image: linear-gradient(90deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .shadow-soft-card {
+    box-shadow: 0 24px 60px hsl(var(--primary) / 0.08);
+  }
+
+  .shadow-editorial {
+    box-shadow:
+      0 1px 0 hsl(var(--foreground) / 0.06),
+      0 24px 60px hsl(var(--foreground) / 0.06);
+  }
+
+  .ring-glow-primary {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.16), 0 18px 40px hsl(var(--glow-strong) / 0.25);
+  }
+
+  .chip-muted {
+    background-color: hsl(var(--chip-bg));
+    color: hsl(var(--chip-foreground));
+    border-color: hsl(var(--chip-border));
+  }
+
+  .bg-grain {
+    background-image:
+      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.06) 1px, transparent 0);
+    background-size: 10px 10px;
+    opacity: 0.25;
+    mix-blend-mode: overlay;
+  }
+}
