@@ -1,5 +1,7 @@
 package main
 
+// Lovable sync trigger: no functional change
+
 import (
 	"archive/zip"
 	"encoding/json"
