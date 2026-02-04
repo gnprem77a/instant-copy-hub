@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { previewPdf } from "@/lib/pdfApi";
+import type { PdfPreviewPage } from "@/lib/pdfApi";
 import FileSelectCard from "@/components/tools/FileSelectCard";
-import PdfPageCard from "@/components/tools/PdfPageCard";
+import PdfPreviewGrid, { type PdfPreviewState } from "@/components/tools/PdfPreviewGrid";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type ToolLayoutProps = {
   title: string;
@@ -25,7 +26,7 @@ type ToolLayoutProps = {
           enabled: boolean;
           loading: boolean;
           error: string | null;
-          pages: Array<{ pageNumber: number; imageUrl: string }>;
+          pages: PdfPreviewPage[];
         };
       }) => React.ReactNode);
   /** Optional override for the Preview panel content. */
@@ -33,10 +34,14 @@ type ToolLayoutProps = {
     enabled: boolean;
     loading: boolean;
     error: string | null;
-    pages: Array<{ pageNumber: number; imageUrl: string }>;
+    pages: PdfPreviewPage[];
   }) => React.ReactNode;
+  /** Optional per-page renderer for the shared preview grid. */
+  previewCardRenderer?: (page: PdfPreviewPage) => React.ReactNode;
+  /** Optional override of pages displayed in the preview grid (e.g. Organize reorder/delete). */
+  previewPagesOverride?: PdfPreviewPage[];
   /** Called when a single-PDF preview finishes loading successfully. */
-  onPreviewLoaded?: (pages: Array<{ pageNumber: number; imageUrl: string }>) => void;
+  onPreviewLoaded?: (pages: PdfPreviewPage[]) => void;
   /** Called whenever the user selects new files. */
   onFilesChanged?: (files: File[]) => void;
 };
@@ -51,6 +56,8 @@ const ToolLayout = ({
   helperText,
   children,
   previewRenderer,
+  previewCardRenderer,
+  previewPagesOverride,
   onPreviewLoaded,
   onFilesChanged,
 }: ToolLayoutProps) => {
@@ -58,23 +65,28 @@ const ToolLayout = ({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-  const [previewPages, setPreviewPages] = useState<Array<{ pageNumber: number; imageUrl: string }>>([]);
+  const [previewFileIndex, setPreviewFileIndex] = useState(0);
+  const [previewState, setPreviewState] = useState<PdfPreviewState>({
+    enabled: false,
+    loading: false,
+    error: null,
+    pages: [],
+  });
 
-  const canPreviewPdf = useMemo(() => {
-    // Only preview when a single PDF is selected.
-    return selectedFiles.length === 1 && selectedFiles[0]?.type === "application/pdf";
-  }, [selectedFiles]);
+  const previewFile = useMemo(() => {
+    if (selectedFiles.length === 0) return null;
+    const idx = Math.min(Math.max(previewFileIndex, 0), selectedFiles.length - 1);
+    return selectedFiles[idx] ?? null;
+  }, [selectedFiles, previewFileIndex]);
 
   const previewCtx = useMemo(
     () => ({
-      enabled: canPreviewPdf,
-      loading: previewLoading,
-      error: previewError,
-      pages: previewPages,
+      enabled: previewState.enabled,
+      loading: previewState.loading,
+      error: previewState.error,
+      pages: previewPagesOverride ?? previewState.pages,
     }),
-    [canPreviewPdf, previewLoading, previewError, previewPages],
+    [previewState, previewPagesOverride],
   );
 
   const renderedChildren = useMemo(() => {
@@ -86,19 +98,38 @@ const ToolLayout = ({
   }, [children, selectedFiles, loading, previewCtx]);
 
   const defaultPreview = (
-    <>
-      {!previewCtx.enabled && <p className="text-xs text-muted-foreground">Select a single PDF to see all pages here.</p>}
-
-      {previewCtx.error && <p className="text-xs text-destructive">{previewCtx.error}</p>}
-
-      {previewCtx.enabled && !previewCtx.loading && !previewCtx.error && previewCtx.pages.length > 0 && (
-        <div className="max-h-[70vh] space-y-3 overflow-auto pr-1">
-          {previewCtx.pages.map((p) => (
-            <PdfPageCard key={p.pageNumber} pageNumber={p.pageNumber} imageUrl={p.imageUrl} />
-          ))}
+    <div className="space-y-3">
+      {selectedFiles.length > 1 && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Preview file</p>
+          <Select
+            value={String(previewFileIndex)}
+            onValueChange={(v) => setPreviewFileIndex(Number(v))}
+          >
+            <SelectTrigger className="h-9 rounded-2xl">
+              <SelectValue placeholder="Choose a file" />
+            </SelectTrigger>
+            <SelectContent>
+              {selectedFiles.map((f, idx) => (
+                <SelectItem key={`${f.name}:${f.size}:${f.lastModified}:${idx}`} value={String(idx)}>
+                  {f.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
-    </>
+
+      <PdfPreviewGrid
+        file={previewFile}
+        pages={previewPagesOverride}
+        renderCard={previewCardRenderer}
+        emptyHint={selectedFiles.length === 0 ? "Select a PDF to see all pages here." : "Select a PDF file to preview."}
+        maxHeightClassName="max-h-[70vh]"
+        onStateChange={setPreviewState}
+        onLoaded={onPreviewLoaded}
+      />
+    </div>
   );
 
   const previewBody = previewRenderer ? previewRenderer(previewCtx) : defaultPreview;
@@ -110,46 +141,9 @@ const ToolLayout = ({
   const handleFilesChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
     setSelectedFiles(files);
+    setPreviewFileIndex(0);
     onFilesChanged?.(files);
   };
-
-  useEffect(() => {
-    if (!canPreviewPdf) {
-      setPreviewPages([]);
-      setPreviewError(null);
-      setPreviewLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    setPreviewLoading(true);
-    setPreviewError(null);
-
-    previewPdf(selectedFiles[0], { signal: controller.signal })
-      .then((res) => {
-        setPreviewPages(res.pages);
-      })
-      .catch((err) => {
-        if (controller.signal.aborted) return;
-        setPreviewPages([]);
-        setPreviewError(err instanceof Error ? err.message : "Failed to load preview");
-      })
-      .finally(() => {
-        if (controller.signal.aborted) return;
-        setPreviewLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [canPreviewPdf, selectedFiles]);
-
-  useEffect(() => {
-    if (!onPreviewLoaded) return;
-    if (!canPreviewPdf) return;
-    if (previewLoading) return;
-    if (previewError) return;
-    if (previewPages.length === 0) return;
-    onPreviewLoaded(previewPages);
-  }, [onPreviewLoaded, canPreviewPdf, previewLoading, previewError, previewPages]);
 
   const handleSubmit = async () => {
     if (selectedFiles.length === 0) {
@@ -228,10 +222,24 @@ const ToolLayout = ({
             <div className="rounded-3xl border bg-card p-4 shadow-soft-card">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold">Preview</h2>
-                {previewLoading && <span className="text-xs text-muted-foreground">Loading…</span>}
+                 {previewCtx.loading && <span className="text-xs text-muted-foreground">Loading…</span>}
               </div>
 
-              <div className="max-h-[45vh] overflow-auto pr-1">{previewBody}</div>
+               <div className="max-h-[45vh] overflow-auto pr-1">
+                 {previewRenderer ? (
+                   previewBody
+                 ) : (
+                   <PdfPreviewGrid
+                     file={previewFile}
+                     pages={previewPagesOverride}
+                     renderCard={previewCardRenderer}
+                     emptyHint={selectedFiles.length === 0 ? "Select a PDF to see all pages here." : "Select a PDF file to preview."}
+                     maxHeightClassName="max-h-[45vh]"
+                     onStateChange={setPreviewState}
+                     onLoaded={onPreviewLoaded}
+                   />
+                 )}
+               </div>
             </div>
           </aside>
 
@@ -239,7 +247,7 @@ const ToolLayout = ({
             <div className="rounded-3xl border bg-card p-4 shadow-soft-card">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold">Preview</h2>
-                {previewLoading && <span className="text-xs text-muted-foreground">Loading…</span>}
+                 {previewCtx.loading && <span className="text-xs text-muted-foreground">Loading…</span>}
               </div>
 
               {previewBody}
