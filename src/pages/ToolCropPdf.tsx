@@ -18,6 +18,8 @@ const ToolCropPdf = () => {
       multiple={false}
       actionLabel="Crop PDF"
       helperText="Select a single PDF to crop."
+      workspaceLayout="preview-left"
+      stickyAction
       onSubmit={async ([file]) => {
         const { downloadUrl } = await cropPdf(file, { description: description.trim(), unit });
         triggerDownload(downloadUrl);

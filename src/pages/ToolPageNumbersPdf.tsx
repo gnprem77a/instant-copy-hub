@@ -41,6 +41,8 @@ const ToolPageNumbersPdf = () => {
       multiple={false}
       actionLabel="Add page numbers"
       helperText="Select a single PDF to add numbering."
+      workspaceLayout="preview-left"
+      stickyAction
       onSubmit={async ([file]) => {
         const { downloadUrl } = await addPageNumbersPdf(file, { position, fontSize, opacity, startAt });
         triggerDownload(downloadUrl);

@@ -21,6 +21,8 @@ const ToolWatermarkPdf = () => {
       multiple={false}
       actionLabel="Add watermark"
       helperText="Select a single PDF to watermark."
+      workspaceLayout="preview-left"
+      stickyAction
       onSubmit={async ([file]) => {
         const { downloadUrl } = await watermarkPdf(file, { text, position, rotation, fontSize, opacity });
         triggerDownload(downloadUrl);

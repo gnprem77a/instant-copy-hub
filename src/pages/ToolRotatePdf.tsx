@@ -16,6 +16,8 @@ const ToolRotatePdf = () => {
       multiple={false}
       actionLabel="Rotate PDF"
       helperText="Select a single PDF to rotate."
+      workspaceLayout="preview-left"
+      stickyAction
       onSubmit={async ([file]) => {
         const { downloadUrl } = await rotatePdf(file, { degrees });
         triggerDownload(downloadUrl);
