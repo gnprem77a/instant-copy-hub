@@ -813,6 +813,8 @@ func handleSplit(w http.ResponseWriter, r *http.Request) {
 
 	mode := r.FormValue("mode")
 	ranges := r.FormValue("ranges")
+	mergeAll := strings.TrimSpace(strings.ToLower(r.FormValue("merge")))
+	mergeAllEnabled := mergeAll == "1" || mergeAll == "true" || mergeAll == "yes" || mergeAll == "on"
 
 	pagesDir := filepath.Join(dir, "pages")
 	if err := os.MkdirAll(pagesDir, 0o755); err != nil {
@@ -833,6 +835,53 @@ func handleSplit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If the user provided custom ranges and asked to merge them, return a single PDF.
+	// Otherwise, return a ZIP of extracted pages.
+	if mode == "ranges" && ranges != "" && mergeAllEnabled {
+		entries, err := os.ReadDir(pagesDir)
+		if err != nil {
+			errorJSON(w, http.StatusInternalServerError, "failed to read pages")
+			return
+		}
+
+		pageFiles := make([]string, 0, len(entries))
+		for _, e := range entries {
+			if e.IsDir() {
+				continue
+			}
+			name := e.Name()
+			if strings.HasSuffix(strings.ToLower(name), ".pdf") {
+				pageFiles = append(pageFiles, filepath.Join(pagesDir, name))
+			}
+		}
+		if len(pageFiles) == 0 {
+			errorJSON(w, http.StatusInternalServerError, "no pages extracted")
+			return
+		}
+
+		// Sort by numeric page suffix when possible to preserve order.
+		sort.Slice(pageFiles, func(i, j int) bool {
+			pi := extractLastInt(pageFiles[i])
+			pj := extractLastInt(pageFiles[j])
+			if pi != pj {
+				return pi < pj
+			}
+			return pageFiles[i] < pageFiles[j]
+		})
+
+		outName := fmt.Sprintf("%s_split.pdf", origBase)
+		outPath := filepath.Join(dir, outName)
+		mergeArgs := append([]string{"merge", outPath}, pageFiles...)
+		if err := runCommand(dir, "pdfcpu", mergeArgs...); err != nil {
+			log.Printf("split merge ranges error: %v", err)
+			errorJSON(w, http.StatusInternalServerError, "failed to merge ranges")
+			return
+		}
+
+		writeJSON(w, http.StatusOK, downloadResponse{DownloadURL: buildDownloadURL(r, jobID, outName)})
+		return
+	}
+
 	zipName := fmt.Sprintf("%s_split_pages.zip", origBase)
 	zipPath := filepath.Join(dir, zipName)
 	if err := zipDirectory(pagesDir, zipPath); err != nil {
@@ -841,6 +890,40 @@ func handleSplit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, downloadResponse{DownloadURL: buildDownloadURL(r, jobID, zipName)})
+}
+
+// extractLastInt extracts the last integer found in a string; returns a large value if none.
+// Used to sort extracted split pages like "page_10.pdf" after "page_2.pdf".
+func extractLastInt(s string) int {
+	base := filepath.Base(s)
+	// Scan from end to find a digit run.
+	end := -1
+	start := -1
+	for i := len(base) - 1; i >= 0; i-- {
+		c := base[i]
+		if c >= '0' && c <= '9' {
+			end = i
+			break
+		}
+	}
+	if end == -1 {
+		return 1<<30 - 1
+	}
+	for i := end; i >= 0; i-- {
+		c := base[i]
+		if c < '0' || c > '9' {
+			start = i + 1
+			break
+		}
+		if i == 0 {
+			start = 0
+		}
+	}
+	n, err := strconv.Atoi(base[start : end+1])
+	if err != nil {
+		return 1<<30 - 1
+	}
+	return n
 }
 
 func handleRemovePages(w http.ResponseWriter, r *http.Request) {
