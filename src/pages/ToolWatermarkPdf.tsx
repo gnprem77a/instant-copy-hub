@@ -5,6 +5,27 @@ import { triggerDownload, watermarkPdf } from "@/lib/pdfApi";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PdfPageCard from "@/components/tools/PdfPageCard";
+
+function markerPositionClass(pos: string) {
+  switch (pos) {
+    case "tc":
+      return "top-3 left-1/2 -translate-x-1/2";
+    case "bc":
+      return "bottom-3 left-1/2 -translate-x-1/2";
+    case "tr":
+      return "top-3 right-3";
+    case "tl":
+      return "top-3 left-3";
+    case "br":
+      return "bottom-3 right-3";
+    case "bl":
+      return "bottom-3 left-3";
+    case "c":
+    default:
+      return "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2";
+  }
+}
 
 const ToolWatermarkPdf = () => {
   const [text, setText] = useState("CONFIDENTIAL");
@@ -23,6 +44,19 @@ const ToolWatermarkPdf = () => {
       helperText="Select a single PDF to watermark."
       workspaceLayout="preview-left"
       stickyAction
+      previewCardRenderer={(p) => (
+        <PdfPageCard
+          pageNumber={p.pageNumber}
+          imageUrl={p.imageUrl}
+          overlay={
+            <div
+              className={`pointer-events-none absolute ${markerPositionClass(
+                position,
+              )} flex h-5 w-5 items-center justify-center rounded-full bg-destructive shadow-soft-card`}
+            />
+          }
+        />
+      )}
       onSubmit={async ([file]) => {
         const { downloadUrl } = await watermarkPdf(file, { text, position, rotation, fontSize, opacity });
         triggerDownload(downloadUrl);
