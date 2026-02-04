@@ -33,7 +33,6 @@ const ToolSplit = () => {
 
   const rangesString = useMemo(() => {
     // Build a backend-compatible comma-separated range string: "1-3,5-7".
-    // We purposely ignore mergeAllRanges for now because the backend returns a ZIP.
     const max = Math.max(pageCount, 1);
     const parts = rangeRows
       .map((r) => {
@@ -109,7 +108,11 @@ const ToolSplit = () => {
         if (tab === "range") {
           const trimmed = rangesString.trim();
           if (trimmed.length > 0) {
-            const { downloadUrl } = await splitPdf(file, { mode: "ranges", ranges: trimmed });
+            const { downloadUrl } = await splitPdf(file, {
+              mode: "ranges",
+              ranges: trimmed,
+              mergeAllRanges,
+            });
             triggerDownload(downloadUrl);
             return;
           }
@@ -244,13 +247,14 @@ const ToolSplit = () => {
                   id="merge-ranges"
                   checked={mergeAllRanges}
                   onCheckedChange={(v) => setMergeAllRanges(Boolean(v))}
-                  disabled
                 />
                 <div className="space-y-1">
                   <Label htmlFor="merge-ranges" className="text-sm">
                     Merge all ranges in one PDF file.
                   </Label>
-                  <p className="text-xs text-muted-foreground">Coming soon (current output is a ZIP).</p>
+                  <p className="text-xs text-muted-foreground">
+                    When enabled, output will be a single PDF (not a ZIP).
+                  </p>
                 </div>
               </div>
             </div>

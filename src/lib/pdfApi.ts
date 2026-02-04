@@ -146,6 +146,8 @@ export async function splitPdf(
   params: {
     mode: "all" | "ranges";
     ranges?: string; // e.g. "1-3,5,8-10"
+    /** When mode==='ranges', merge extracted pages into a single PDF instead of a ZIP. */
+    mergeAllRanges?: boolean;
   },
   options?: RequestOptions,
 ) {
@@ -154,6 +156,9 @@ export async function splitPdf(
   fd.append("mode", params.mode);
   if (params.ranges) {
     fd.append("ranges", params.ranges);
+  }
+  if (params.mergeAllRanges) {
+    fd.append("merge", "true");
   }
   return postPdf("/split", fd, options);
 }
