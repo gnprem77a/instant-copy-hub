@@ -72,6 +72,22 @@ async function postPdf(
   return data;
 }
 
+export async function runSingleFileTool(
+  path: string,
+  file: File,
+  fields?: Record<string, string>,
+  options?: RequestOptions,
+): Promise<DownloadResponse> {
+  const fd = new FormData();
+  fd.append("file", file);
+  if (fields) {
+    Object.entries(fields).forEach(([k, v]) => {
+      if (typeof v === "string" && v.length > 0) fd.append(k, v);
+    });
+  }
+  return postPdf(path, fd, options);
+}
+
 async function postJson<T>(
   path: string,
   formData: FormData,
@@ -243,6 +259,79 @@ export async function previewPdf(file: File, options?: RequestOptions): Promise<
     throw new Error("Invalid PDF preview response");
   }
   return data;
+}
+
+// === Newly surfaced tools (frontend wiring) ===
+
+export async function comparePdfs(left: File, right: File, options?: RequestOptions) {
+  const fd = new FormData();
+  fd.append("left", left);
+  fd.append("right", right);
+  return postPdf("/compare", fd, options);
+}
+
+export async function digitalSignature(
+  file: File,
+  signatureImage: File,
+  params?: { position?: string; page?: number },
+  options?: RequestOptions,
+) {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("signatureImage", signatureImage);
+  if (params?.position) fd.append("position", params.position);
+  if (typeof params?.page === "number") fd.append("page", String(params.page));
+  return postPdf("/digital-signature", fd, options);
+}
+
+export type ValidatePdfaResult =
+  | { kind: "download"; downloadUrl: string }
+  | { kind: "report"; report: unknown };
+
+export async function validatePdfa(file: File, options?: RequestOptions): Promise<ValidatePdfaResult> {
+  const fd = new FormData();
+  fd.append("file", file);
+
+  const url = `${API_BASE_URL}/validate-pdfa`;
+  const response = await fetch(url, {
+    method: "POST",
+    body: fd,
+    signal: options?.signal,
+    credentials: "include",
+    headers: options?.authToken ? { Authorization: `Bearer ${options.authToken}` } : undefined,
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    console.error("PDF API request failed", {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      formFields: ["file"],
+      responseText: text,
+    });
+    throw new Error(`PDF API error ${response.status} (${url}): ${text || response.statusText}`);
+  }
+
+  const text = await response.text();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    // If the backend returns non-JSON here, surface the raw text.
+    return { kind: "report", report: text };
+  }
+
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    "downloadUrl" in (parsed as Record<string, unknown>) &&
+    typeof (parsed as Record<string, unknown>).downloadUrl === "string"
+  ) {
+    return { kind: "download", downloadUrl: (parsed as { downloadUrl: string }).downloadUrl };
+  }
+
+  return { kind: "report", report: parsed };
 }
 
 export async function organizePdf(

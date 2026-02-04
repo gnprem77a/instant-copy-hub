@@ -20,6 +20,26 @@ import ToolRotatePdf from "./pages/ToolRotatePdf";
 import ToolCropPdf from "./pages/ToolCropPdf";
 import ToolPageNumbersPdf from "./pages/ToolPageNumbersPdf";
 import ToolWatermarkPdf from "./pages/ToolWatermarkPdf";
+import ToolProtectPdf from "./pages/ToolProtectPdf";
+import ToolUnlockPdf from "./pages/ToolUnlockPdf";
+import ToolRedactPdf from "./pages/ToolRedactPdf";
+import ToolFlattenPdf from "./pages/ToolFlattenPdf";
+import ToolPdfToWord from "./pages/ToolPdfToWord";
+import ToolPdfToExcel from "./pages/ToolPdfToExcel";
+import ToolPdfToPowerPoint from "./pages/ToolPdfToPowerPoint";
+import ToolPdfToJpg from "./pages/ToolPdfToJpg";
+import ToolPdfToHtml from "./pages/ToolPdfToHtml";
+import ToolExtractText from "./pages/ToolExtractText";
+import ToolExtractImages from "./pages/ToolExtractImages";
+import ToolHtmlToPdf from "./pages/ToolHtmlToPdf";
+import ToolExcelToPdf from "./pages/ToolExcelToPdf";
+import ToolPowerPointToPdf from "./pages/ToolPowerPointToPdf";
+import ToolComparePdfs from "./pages/ToolComparePdfs";
+import ToolDigitalSignature from "./pages/ToolDigitalSignature";
+import ToolValidatePdfa from "./pages/ToolValidatePdfa";
+import ToolAddHeaderFooter from "./pages/ToolAddHeaderFooter";
+import ToolPreviewPdf from "./pages/ToolPreviewPdf";
+import ToolConvertToPdfa from "./pages/ToolConvertToPdfa";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +66,26 @@ const App = () => (
           <Route path="/tools/crop" element={<ToolCropPdf />} />
           <Route path="/tools/page-numbers" element={<ToolPageNumbersPdf />} />
           <Route path="/tools/watermark" element={<ToolWatermarkPdf />} />
+          <Route path="/tools/protect" element={<ToolProtectPdf />} />
+          <Route path="/tools/unlock" element={<ToolUnlockPdf />} />
+          <Route path="/tools/redact" element={<ToolRedactPdf />} />
+          <Route path="/tools/flatten" element={<ToolFlattenPdf />} />
+          <Route path="/tools/pdf-to-word" element={<ToolPdfToWord />} />
+          <Route path="/tools/pdf-to-excel" element={<ToolPdfToExcel />} />
+          <Route path="/tools/pdf-to-powerpoint" element={<ToolPdfToPowerPoint />} />
+          <Route path="/tools/pdf-to-jpg" element={<ToolPdfToJpg />} />
+          <Route path="/tools/pdf-to-html" element={<ToolPdfToHtml />} />
+          <Route path="/tools/extract-text" element={<ToolExtractText />} />
+          <Route path="/tools/extract-images" element={<ToolExtractImages />} />
+          <Route path="/tools/html-to-pdf" element={<ToolHtmlToPdf />} />
+          <Route path="/tools/excel-to-pdf" element={<ToolExcelToPdf />} />
+          <Route path="/tools/powerpoint-to-pdf" element={<ToolPowerPointToPdf />} />
+          <Route path="/tools/compare" element={<ToolComparePdfs />} />
+          <Route path="/tools/digital-signature" element={<ToolDigitalSignature />} />
+          <Route path="/tools/validate-pdfa" element={<ToolValidatePdfa />} />
+          <Route path="/tools/header-footer" element={<ToolAddHeaderFooter />} />
+          <Route path="/tools/preview" element={<ToolPreviewPdf />} />
+          <Route path="/tools/convert-to-pdfa" element={<ToolConvertToPdfa />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
