@@ -125,7 +125,7 @@ const ToolLayout = ({
         pages={previewPagesOverride}
         renderCard={previewCardRenderer}
         emptyHint={selectedFiles.length === 0 ? "Select a PDF to see all pages here." : "Select a PDF file to preview."}
-        maxHeightClassName="max-h-[70vh]"
+          maxHeightClassName="h-[70vh]"
         onStateChange={setPreviewState}
         onLoaded={onPreviewLoaded}
       />
@@ -234,7 +234,7 @@ const ToolLayout = ({
                      pages={previewPagesOverride}
                      renderCard={previewCardRenderer}
                      emptyHint={selectedFiles.length === 0 ? "Select a PDF to see all pages here." : "Select a PDF file to preview."}
-                     maxHeightClassName="max-h-[45vh]"
+                      maxHeightClassName="h-[45vh]"
                      onStateChange={setPreviewState}
                      onLoaded={onPreviewLoaded}
                    />
