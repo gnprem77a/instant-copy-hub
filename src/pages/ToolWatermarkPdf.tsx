@@ -44,6 +44,7 @@ const ToolWatermarkPdf = () => {
       helperText="Select a single PDF to watermark."
       workspaceLayout="preview-left"
       stickyAction
+      showFileCard={false}
       previewCardRenderer={(p) => (
         <PdfPageCard
           pageNumber={p.pageNumber}
