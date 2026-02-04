@@ -48,6 +48,8 @@ type ToolLayoutProps = {
   onPreviewLoaded?: (pages: PdfPreviewPage[]) => void;
   /** Called whenever the user selects new files. */
   onFilesChanged?: (files: File[]) => void;
+   /** Hide the FileSelectCard inside the workspace (tools that manage files elsewhere). */
+   showFileCard?: boolean;
 };
 
 const ToolLayout = ({
@@ -66,6 +68,7 @@ const ToolLayout = ({
   previewPagesOverride,
   onPreviewLoaded,
   onFilesChanged,
+  showFileCard = true,
 }: ToolLayoutProps) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -277,22 +280,24 @@ const ToolLayout = ({
 
                     <aside className="rounded-3xl border bg-card p-6 shadow-soft-card">
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <FileSelectCard
-                            selectedCount={selectedFiles.length}
-                            disabled={loading}
-                            onClick={handleSelectClick}
-                            helperText={`${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`}
-                          />
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept={accept}
-                            multiple={multiple}
-                            className="hidden"
-                            onChange={handleFilesChange}
-                          />
-                        </div>
+                        {showFileCard && (
+                          <div className="space-y-2">
+                            <FileSelectCard
+                              selectedCount={selectedFiles.length}
+                              disabled={loading}
+                              onClick={handleSelectClick}
+                              helperText={`${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`}
+                            />
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept={accept}
+                              multiple={multiple}
+                              className="hidden"
+                              onChange={handleFilesChange}
+                            />
+                          </div>
+                        )}
 
                         {renderedChildren && <div className="space-y-3">{renderedChildren}</div>}
 
@@ -313,22 +318,24 @@ const ToolLayout = ({
                   <>
                     <section className="rounded-3xl border bg-card p-6 shadow-soft-card md:p-8">
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <FileSelectCard
-                            selectedCount={selectedFiles.length}
-                            disabled={loading}
-                            onClick={handleSelectClick}
-                            helperText={`${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`}
-                          />
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept={accept}
-                            multiple={multiple}
-                            className="hidden"
-                            onChange={handleFilesChange}
-                          />
-                        </div>
+                        {showFileCard && (
+                          <div className="space-y-2">
+                            <FileSelectCard
+                              selectedCount={selectedFiles.length}
+                              disabled={loading}
+                              onClick={handleSelectClick}
+                              helperText={`${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`}
+                            />
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept={accept}
+                              multiple={multiple}
+                              className="hidden"
+                              onChange={handleFilesChange}
+                            />
+                          </div>
+                        )}
 
                         {renderedChildren && <div className="space-y-3">{renderedChildren}</div>}
 
