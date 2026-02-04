@@ -64,6 +64,7 @@ const ToolLayout = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const [previewFileIndex, setPreviewFileIndex] = useState(0);
   const [previewState, setPreviewState] = useState<PdfPreviewState>({
@@ -138,11 +139,25 @@ const ToolLayout = ({
     fileInputRef.current?.click();
   };
 
-  const handleFilesChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
-    const files = event.target.files ? Array.from(event.target.files) : [];
+  const applyFiles = (files: File[]) => {
     setSelectedFiles(files);
     setPreviewFileIndex(0);
     onFilesChanged?.(files);
+  };
+
+  const handleFilesChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    applyFiles(files);
+  };
+
+  const handleDrop: React.DragEventHandler<HTMLDivElement> = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (loading) return;
+    const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+    if (files.length === 0) return;
+    applyFiles(multiple ? files : [files[0]]);
   };
 
   const handleSubmit = async () => {
@@ -170,90 +185,153 @@ const ToolLayout = ({
     }
   };
 
+  const isEmpty = selectedFiles.length === 0;
+
   return (
     <main className="bg-background pb-16 pt-10 md:pb-24 md:pt-16">
       <div className="container max-w-6xl">
-        <header className="mb-6 space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{title}</h1>
-          <p className="text-sm text-muted-foreground md:text-base">{description}</p>
-        </header>
+        {isEmpty ? (
+          <section
+            className="min-h-[62vh]"
+            onDragEnter={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (loading) return;
+              setIsDragOver(true);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (loading) return;
+              setIsDragOver(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragOver(false);
+            }}
+            onDrop={handleDrop}
+          >
+            <div className="mx-auto flex max-w-3xl flex-col items-center justify-center px-2 text-center">
+              <header className="mb-8 space-y-3">
+                <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">{title}</h1>
+                <p className="text-base text-muted-foreground md:text-lg">{description}</p>
+              </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),360px]">
-          <section className="rounded-3xl border bg-card p-6 shadow-soft-card md:p-8">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                 <FileSelectCard
-                   selectedCount={selectedFiles.length}
-                   disabled={loading}
-                   onClick={handleSelectClick}
-                   helperText={
-                     selectedFiles.length === 0
-                       ? helperText || "Choose files from your device to get started."
-                       : `${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`
-                   }
-                 />
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={accept}
-                  multiple={multiple}
-                  className="hidden"
-                  onChange={handleFilesChange}
-                />
+              <div
+                className={
+                  "w-full rounded-[2.25rem] border bg-card/40 p-7 shadow-soft-card backdrop-blur md:p-10 " +
+                  (isDragOver ? "ring-glow-primary border-primary/45" : "")
+                }
+              >
+                <div className="mx-auto flex max-w-xl flex-col items-center gap-4">
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="h-14 w-full max-w-md rounded-2xl text-base font-semibold md:h-16 md:text-lg"
+                    onClick={handleSelectClick}
+                    disabled={loading}
+                  >
+                    {multiple ? "Select PDF files" : "Select PDF file"}
+                  </Button>
+                  <p className="text-sm text-muted-foreground">or drop PDF here</p>
+                  {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
+                </div>
               </div>
 
-              {renderedChildren && <div className="space-y-3">{renderedChildren}</div>}
-
-              <div className="pt-2">
-                <Button
-                  type="button"
-                  className="w-full rounded-2xl text-sm font-semibold md:text-base"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                >
-                  {loading ? "Processing…" : actionLabel}
-                </Button>
-              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={accept}
+                multiple={multiple}
+                className="hidden"
+                onChange={handleFilesChange}
+              />
             </div>
           </section>
+        ) : (
+          <>
+            <header className="mb-6 space-y-2">
+              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{title}</h1>
+              <p className="text-sm text-muted-foreground md:text-base">{description}</p>
+            </header>
 
-          {/* Mobile preview (inline). Desktop stays as a side panel. */}
-          <aside className="lg:hidden">
-            <div className="rounded-3xl border bg-card p-4 shadow-soft-card">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Preview</h2>
-                 {previewCtx.loading && <span className="text-xs text-muted-foreground">Loading…</span>}
-              </div>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),360px]">
+              <section className="rounded-3xl border bg-card p-6 shadow-soft-card md:p-8">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <FileSelectCard
+                      selectedCount={selectedFiles.length}
+                      disabled={loading}
+                      onClick={handleSelectClick}
+                      helperText={`${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`}
+                    />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept={accept}
+                      multiple={multiple}
+                      className="hidden"
+                      onChange={handleFilesChange}
+                    />
+                  </div>
 
-               <div className="max-h-[45vh] overflow-auto pr-1">
-                 {previewRenderer ? (
-                   previewBody
-                 ) : (
-                   <PdfPreviewGrid
-                     file={previewFile}
-                     pages={previewPagesOverride}
-                     renderCard={previewCardRenderer}
-                     emptyHint={selectedFiles.length === 0 ? "Select a PDF to see all pages here." : "Select a PDF file to preview."}
-                      maxHeightClassName="h-[45vh]"
-                     onStateChange={setPreviewState}
-                     onLoaded={onPreviewLoaded}
-                   />
-                 )}
-               </div>
+                  {renderedChildren && <div className="space-y-3">{renderedChildren}</div>}
+
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      className="w-full rounded-2xl text-sm font-semibold md:text-base"
+                      onClick={handleSubmit}
+                      disabled={loading}
+                    >
+                      {loading ? "Processing…" : actionLabel}
+                    </Button>
+                  </div>
+                </div>
+              </section>
+
+              {/* Mobile preview (inline). Desktop stays as a side panel. */}
+              <aside className="lg:hidden">
+                <div className="rounded-3xl border bg-card p-4 shadow-soft-card">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold">Preview</h2>
+                    {previewCtx.loading && <span className="text-xs text-muted-foreground">Loading…</span>}
+                  </div>
+
+                  <div className="max-h-[45vh] overflow-auto pr-1">
+                    {previewRenderer ? (
+                      previewBody
+                    ) : (
+                      <PdfPreviewGrid
+                        file={previewFile}
+                        pages={previewPagesOverride}
+                        renderCard={previewCardRenderer}
+                        emptyHint={
+                          selectedFiles.length === 0 ? "Select a PDF to see all pages here." : "Select a PDF file to preview."
+                        }
+                        maxHeightClassName="h-[45vh]"
+                        onStateChange={setPreviewState}
+                        onLoaded={onPreviewLoaded}
+                      />
+                    )}
+                  </div>
+                </div>
+              </aside>
+
+              <aside className="hidden lg:block">
+                <div className="rounded-3xl border bg-card p-4 shadow-soft-card">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold">Preview</h2>
+                    {previewCtx.loading && <span className="text-xs text-muted-foreground">Loading…</span>}
+                  </div>
+
+                  {previewBody}
+                </div>
+              </aside>
             </div>
-          </aside>
-
-          <aside className="hidden lg:block">
-            <div className="rounded-3xl border bg-card p-4 shadow-soft-card">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Preview</h2>
-                 {previewCtx.loading && <span className="text-xs text-muted-foreground">Loading…</span>}
-              </div>
-
-              {previewBody}
-            </div>
-          </aside>
-        </div>
+          </>
+        )}
       </div>
     </main>
   );
