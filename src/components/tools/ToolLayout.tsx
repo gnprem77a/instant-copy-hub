@@ -367,22 +367,24 @@ const ToolLayout = ({
               {/* Mobile preview (inline). */}
               <section className="lg:hidden rounded-3xl border bg-card p-6 shadow-soft-card md:p-8">
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <FileSelectCard
-                      selectedCount={selectedFiles.length}
-                      disabled={loading}
-                      onClick={handleSelectClick}
-                      helperText={`${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`}
-                    />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept={accept}
-                      multiple={multiple}
-                      className="hidden"
-                      onChange={handleFilesChange}
-                    />
-                  </div>
+                  {showFileCard && (
+                    <div className="space-y-2">
+                      <FileSelectCard
+                        selectedCount={selectedFiles.length}
+                        disabled={loading}
+                        onClick={handleSelectClick}
+                        helperText={`${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`}
+                      />
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={accept}
+                        multiple={multiple}
+                        className="hidden"
+                        onChange={handleFilesChange}
+                      />
+                    </div>
+                  )}
 
                   {renderedChildren && <div className="space-y-3">{renderedChildren}</div>}
 
