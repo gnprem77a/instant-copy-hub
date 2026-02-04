@@ -65,108 +65,83 @@ const ToolOrganizePdf = () => {
           }));
         });
       }}
-      previewRenderer={(preview) => {
-        if (!preview.enabled) {
-          return <p className="text-xs text-muted-foreground">Select a single PDF to see all pages here.</p>;
-        }
-        if (preview.error) {
-          return <p className="text-xs text-destructive">{preview.error}</p>;
-        }
-        if (preview.loading) {
-          return <p className="text-xs text-muted-foreground">Rendering preview…</p>;
-        }
-        if (preview.pages.length === 0) {
-          return <p className="text-xs text-muted-foreground">No pages found.</p>;
+      previewPagesOverride={pages.length > 0 ? pages.map((p) => ({ pageNumber: p.pageNumber, imageUrl: p.imageUrl })) : undefined}
+      previewCardRenderer={(page) => {
+        const p = pages.find((x) => x.pageNumber === page.pageNumber);
+        if (!p) {
+          return <PdfPageCard pageNumber={page.pageNumber} imageUrl={page.imageUrl} />;
         }
 
         return (
-          <div className="space-y-3">
-            {pages.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Drag pages to reorder. Use rotate or delete per page.
-              </p>
-            )}
-            <div className="max-h-[70vh] space-y-3 overflow-auto pr-1">
-              {pages.map((p) => (
-                <div
-                  key={p.pageNumber}
-                  draggable
-                  onDragStart={() => setDragging(p.pageNumber)}
-                  onDragEnd={() => setDragging(null)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => {
-                    if (dragging == null || dragging === p.pageNumber) return;
-                    setPages((prev) => {
-                      const fromIdx = prev.findIndex((x) => x.pageNumber === dragging);
-                      const toIdx = prev.findIndex((x) => x.pageNumber === p.pageNumber);
-                      if (fromIdx < 0 || toIdx < 0) return prev;
-                      const next = [...prev];
-                      const [moved] = next.splice(fromIdx, 1);
-                      next.splice(toIdx, 0, moved);
-                      return next;
-                    });
-                  }}
-                  className="rounded-2xl border bg-background/30 p-2"
-                >
-                  <PdfPageCard
-                    pageNumber={p.pageNumber}
-                    imageUrl={p.imageUrl}
-                    className={p.deleted ? "opacity-45" : "opacity-100"}
-                    imageStyle={{ transform: `rotate(${p.rotation}deg)` }}
-                    footerRight={
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-7 rounded-full px-2 text-[11px]"
-                          onClick={() =>
-                            setPages((prev) =>
-                              prev.map((x) =>
-                                x.pageNumber === p.pageNumber
-                                  ? { ...x, rotation: clampRotation(x.rotation - 90) }
-                                  : x,
-                              ),
-                            )
-                          }
-                        >
-                          ⟲
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-7 rounded-full px-2 text-[11px]"
-                          onClick={() =>
-                            setPages((prev) =>
-                              prev.map((x) =>
-                                x.pageNumber === p.pageNumber
-                                  ? { ...x, rotation: clampRotation(x.rotation + 90) }
-                                  : x,
-                              ),
-                            )
-                          }
-                        >
-                          ⟳
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={p.deleted ? "secondary" : "outline"}
-                          className="h-7 rounded-full px-2 text-[11px]"
-                          onClick={() =>
-                            setPages((prev) =>
-                              prev.map((x) =>
-                                x.pageNumber === p.pageNumber ? { ...x, deleted: !x.deleted } : x,
-                              ),
-                            )
-                          }
-                        >
-                          {p.deleted ? "Restore" : "Delete"}
-                        </Button>
-                      </div>
+          <div
+            draggable
+            onDragStart={() => setDragging(p.pageNumber)}
+            onDragEnd={() => setDragging(null)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => {
+              if (dragging == null || dragging === p.pageNumber) return;
+              setPages((prev) => {
+                const fromIdx = prev.findIndex((x) => x.pageNumber === dragging);
+                const toIdx = prev.findIndex((x) => x.pageNumber === p.pageNumber);
+                if (fromIdx < 0 || toIdx < 0) return prev;
+                const next = [...prev];
+                const [moved] = next.splice(fromIdx, 1);
+                next.splice(toIdx, 0, moved);
+                return next;
+              });
+            }}
+            className="rounded-2xl border bg-background/30 p-2"
+          >
+            <PdfPageCard
+              pageNumber={p.pageNumber}
+              imageUrl={p.imageUrl}
+              className={p.deleted ? "opacity-45" : "opacity-100"}
+              imageStyle={{ transform: `rotate(${p.rotation}deg)` }}
+              footerRight={
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-7 rounded-full px-2 text-[11px]"
+                    onClick={() =>
+                      setPages((prev) =>
+                        prev.map((x) =>
+                          x.pageNumber === p.pageNumber ? { ...x, rotation: clampRotation(x.rotation - 90) } : x,
+                        ),
+                      )
                     }
-                  />
+                  >
+                    ⟲
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-7 rounded-full px-2 text-[11px]"
+                    onClick={() =>
+                      setPages((prev) =>
+                        prev.map((x) =>
+                          x.pageNumber === p.pageNumber ? { ...x, rotation: clampRotation(x.rotation + 90) } : x,
+                        ),
+                      )
+                    }
+                  >
+                    ⟳
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={p.deleted ? "secondary" : "outline"}
+                    className="h-7 rounded-full px-2 text-[11px]"
+                    onClick={() =>
+                      setPages((prev) =>
+                        prev.map((x) => (x.pageNumber === p.pageNumber ? { ...x, deleted: !x.deleted } : x)),
+                      )
+                    }
+                  >
+                    {p.deleted ? "Restore" : "Delete"}
+                  </Button>
                 </div>
-              ))}
-            </div>
+              }
+            />
           </div>
         );
       }}

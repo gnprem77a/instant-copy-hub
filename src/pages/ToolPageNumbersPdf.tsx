@@ -45,45 +45,25 @@ const ToolPageNumbersPdf = () => {
         const { downloadUrl } = await addPageNumbersPdf(file, { position, fontSize, opacity, startAt });
         triggerDownload(downloadUrl);
       }}
-      previewRenderer={(preview) => {
-        if (!preview.enabled) {
-          return <p className="text-xs text-muted-foreground">Select a single PDF to see all pages here.</p>;
-        }
-        if (preview.error) {
-          return <p className="text-xs text-destructive">{preview.error}</p>;
-        }
-        if (preview.loading) {
-          return <p className="text-xs text-muted-foreground">Rendering preview…</p>;
-        }
-        if (preview.pages.length === 0) {
-          return <p className="text-xs text-muted-foreground">No pages found.</p>;
-        }
-
+      previewCardRenderer={(p) => {
+        const label = String(startAt + (p.pageNumber - 1));
         return (
-          <div className="max-h-[70vh] space-y-3 overflow-auto pr-1">
-            {preview.pages.map((p) => {
-              const label = String(startAt + (p.pageNumber - 1));
-              return (
-                <PdfPageCard
-                  key={p.pageNumber}
-                  pageNumber={p.pageNumber}
-                  imageUrl={p.imageUrl}
-                  overlay={
-                    <div
-                      className={
-                        "pointer-events-none absolute " +
-                        overlayClassForPosition(position) +
-                        " rounded-md bg-background/70 px-2 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur"
-                      }
-                      style={{ opacity }}
-                    >
-                      <span style={{ fontSize: Math.max(10, Math.min(20, fontSize)) }}>{label}</span>
-                    </div>
-                  }
-                />
-              );
-            })}
-          </div>
+          <PdfPageCard
+            pageNumber={p.pageNumber}
+            imageUrl={p.imageUrl}
+            overlay={
+              <div
+                className={
+                  "pointer-events-none absolute " +
+                  overlayClassForPosition(position) +
+                  " rounded-md bg-background/70 px-2 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur"
+                }
+                style={{ opacity }}
+              >
+                <span style={{ fontSize: Math.max(10, Math.min(20, fontSize)) }}>{label}</span>
+              </div>
+            }
+          />
         );
       }}
     >
