@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import PdfPageCard from "@/components/tools/PdfPageCard";
 import { previewPdf, type PdfPreviewPage } from "@/lib/pdfApi";
+import { PdfPreviewScrollProvider } from "@/components/tools/pdfPreviewScrollContext";
 
 export type PdfPreviewState = {
   enabled: boolean;
@@ -38,6 +39,7 @@ export default function PdfPreviewGrid({
   onStateChange,
   onLoaded,
 }: PdfPreviewGridProps) {
+  const scrollRootRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pages, setPages] = useState<PdfPreviewPage[]>([]);
@@ -97,14 +99,16 @@ export default function PdfPreviewGrid({
   }
 
   return (
-    <div className={`${maxHeightClassName} overflow-auto pr-1`}>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        {displayPages.map((p) => (
-          <div key={p.pageNumber} className="min-w-0">
-            {renderCard ? renderCard(p) : <PdfPageCard pageNumber={p.pageNumber} imageUrl={p.imageUrl} />}
-          </div>
-        ))}
+    <PdfPreviewScrollProvider value={{ scrollRoot: scrollRootRef.current, rootMargin: "320px 0px" }}>
+      <div ref={scrollRootRef} className={`${maxHeightClassName} overflow-auto pr-1`}>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {displayPages.map((p) => (
+            <div key={p.pageNumber} className="min-w-0">
+              {renderCard ? renderCard(p) : <PdfPageCard pageNumber={p.pageNumber} imageUrl={p.imageUrl} />}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </PdfPreviewScrollProvider>
   );
 }
