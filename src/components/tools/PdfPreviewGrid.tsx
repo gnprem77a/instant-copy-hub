@@ -53,7 +53,14 @@ export default function PdfPreviewGrid({
   const [error, setError] = useState<string | null>(null);
   const [pages, setPages] = useState<PdfPreviewPage[]>([]);
 
-  const enabled = useMemo(() => !!file && file.type === "application/pdf", [file]);
+  const enabled = useMemo(() => {
+    if (!file) return false;
+    // Some browsers/OSes provide an empty or generic MIME type for PDFs.
+    // iLovePDF-style UX should still preview based on filename.
+    const t = (file.type || "").toLowerCase();
+    const name = (file.name || "").toLowerCase();
+    return t.includes("pdf") || name.endsWith(".pdf");
+  }, [file]);
 
   const displayPages = pagesOverride ?? pages;
 
@@ -80,6 +87,7 @@ export default function PdfPreviewGrid({
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
+        console.error("Preview failed", err);
         setPages([]);
         setError(err instanceof Error ? err.message : "Failed to load preview");
       })
